@@ -108,5 +108,5 @@ void loop() {
 
   submitSensors(event.acceleration.x, event.acceleration.y, event.acceleration.z);
   
-  delay(1000); 
+  delay(5000); 
 }

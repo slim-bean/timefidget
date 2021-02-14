@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+
 	// catch signals and terminate the app
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,

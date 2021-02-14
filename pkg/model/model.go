@@ -1,5 +1,9 @@
 package model
 
+const (
+	ProjectName = "project"
+)
+
 type AccelDTO struct {
 	X string `json:"x"`
 	Y string `json:"y"`
