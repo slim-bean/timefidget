@@ -24,8 +24,8 @@ const (
 	P0 = ""
 	P1 = "Slack"
 	P2 = "Loki Community"
-	P3 = "Loki Ops"
-	P4 = "Loki"
+	P3 = "Loki"
+	P4 = "Hiring"
 	P5 = "Sales"
 	P6 = "1-1"
 	P7 = "Management"
@@ -84,28 +84,28 @@ func (s *Server) pushHandler(w http.ResponseWriter, req *http.Request) {
 		//level.Info(util.Logger).Log("pos", "0")
 	} else if d.X > OFF_MIN && d.X < OFF_MAX && d.Y < -ON_MIN && d.Y > -ON_MAX {
 		// Position 1
-		level.Info(util.Logger).Log("pos", "1", model.ProjectName, P1)
+		level.Info(util.Logger).Log("type", "add", "pos", "1", model.ProjectName, P1)
 	} else if d.X > HALF_MIN && d.X < HALF_MAX && d.Y < -HALF_MIN && d.Y > -HALF_MAX {
 		// Position 2
-		level.Info(util.Logger).Log("pos", "2", model.ProjectName, P2)
+		level.Info(util.Logger).Log("type", "add", "pos", "2", model.ProjectName, P2)
 	} else if d.X > ON_MIN && d.X < ON_MAX && d.Y > OFF_MIN && d.Y < OFF_MAX {
 		// Position 3
-		level.Info(util.Logger).Log("pos", "3", model.ProjectName, P3)
+		level.Info(util.Logger).Log("type", "add", "pos", "3", model.ProjectName, P3)
 	} else if d.X > HALF_MIN && d.X < HALF_MAX && d.Y > HALF_MIN && d.Y < HALF_MAX {
 		// Position 4
-		level.Info(util.Logger).Log("pos", "4", model.ProjectName, P4)
+		level.Info(util.Logger).Log("type", "add", "pos", "4", model.ProjectName, P4)
 	} else if d.X > OFF_MIN && d.X < OFF_MAX && d.Y > ON_MIN && d.Y < ON_MAX {
 		// Position 5
-		level.Info(util.Logger).Log("pos", "5", model.ProjectName, P5)
+		level.Info(util.Logger).Log("type", "add", "pos", "5", model.ProjectName, P5)
 	} else if d.X < -HALF_MIN && d.X > -HALF_MAX && d.Y > HALF_MIN && d.Y < HALF_MAX {
 		// Position 6
-		level.Info(util.Logger).Log("pos", "6", model.ProjectName, P6)
+		level.Info(util.Logger).Log("type", "add", "pos", "6", model.ProjectName, P6)
 	} else if d.X < -ON_MIN && d.X > -ON_MAX && d.Y > OFF_MIN && d.Y < ON_MIN {
 		// Position 7
-		level.Info(util.Logger).Log("pos", "7", model.ProjectName, P7)
+		level.Info(util.Logger).Log("type", "add", "pos", "7", model.ProjectName, P7)
 	} else if d.X < -HALF_MIN && d.X > -HALF_MAX && d.Y < -HALF_MIN && d.Y > -HALF_MAX {
 		// Position 8
-		level.Info(util.Logger).Log("pos", "8", model.ProjectName, P8)
+		level.Info(util.Logger).Log("type", "add", "pos", "8", model.ProjectName, P8)
 	}
 
 	//level.Info(util.Logger).Log("msg", fmt.Sprintf("AccelDTO: %+v", d))

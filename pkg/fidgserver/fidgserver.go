@@ -3,6 +3,7 @@ package fidgserver
 import (
 	"flag"
 	"os"
+	"sync"
 
 	"github.com/cortexproject/cortex/pkg/util/flagext"
 	"github.com/go-kit/kit/log"
@@ -36,7 +37,8 @@ func (c *Config) Clone() flagext.Registerer {
 }
 
 type fidgserver struct {
-	server *server.Server
+	server   *server.Server
+	shutdown sync.WaitGroup
 }
 
 func NewFidgserver() (*fidgserver, error) {
@@ -47,9 +49,10 @@ func NewFidgserver() (*fidgserver, error) {
 	}
 
 	var logger log.Logger
+	fs := &fidgserver{}
 
 	if config.EmbedLoki {
-		lokiembed.RunLoki(config.Config)
+		lokiembed.RunLoki(config.Config, &fs.shutdown)
 		lw, err := lokiembed.NewLogWriter(config.Config)
 		if err != nil {
 			return nil, err
@@ -67,7 +70,11 @@ func NewFidgserver() (*fidgserver, error) {
 		return nil, err
 	}
 
-	return &fidgserver{
-		server: s,
-	}, nil
+	fs.server = s
+
+	return fs, nil
+}
+
+func (f *fidgserver) Stop() {
+	f.shutdown.Wait()
 }

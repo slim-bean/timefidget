@@ -5,13 +5,13 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cortexproject/cortex/pkg/util"
 	"github.com/cortexproject/cortex/pkg/util/flagext"
 	"github.com/cortexproject/cortex/pkg/util/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/grafana/loki/pkg/logql/log/logfmt"
 	"github.com/grafana/loki/pkg/loki"
 	"github.com/grafana/loki/pkg/util/validation"
 	"github.com/prometheus/common/model"
@@ -23,8 +23,6 @@ import (
 	"github.com/grafana/loki/pkg/promtail/api"
 	"github.com/grafana/loki/pkg/promtail/client"
 	"github.com/prometheus/client_golang/prometheus"
-
-	fidgmodel "timefidget/pkg/model"
 )
 
 type LogWriter struct {
@@ -59,18 +57,25 @@ func NewLogWriter(config loki.Config) (*LogWriter, error) {
 	return w, nil
 }
 
+func (l *LogWriter) Stop() {
+	l.client.Stop()
+}
+
 func (l *LogWriter) Write(p []byte) (n int, err error) {
 	level.Info(util_log.Logger).Log("msg", "sending to Loki")
-	d := logfmt.NewDecoder(p)
-	var project string
-	for d.ScanKeyval() {
-		if string(d.Key()) == fidgmodel.ProjectName {
-			project = string(d.Value())
-		}
-	}
+	//d := logfmt.NewDecoder(p)
+	//var project string
+	//for d.ScanKeyval() {
+	//	if string(d.Key()) == fidgmodel.ProjectName {
+	//		project = string(d.Value())
+	//	}
+	//}
 	str := string(p)
 	e := api.Entry{
-		Labels: model.LabelSet{fidgmodel.ProjectName: model.LabelValue(project)},
+		Labels: model.LabelSet{
+			"job": "timefidget",
+			//fidgmodel.ProjectName: model.LabelValue(project),
+		},
 		Entry: logproto.Entry{
 			Timestamp: time.Now(),
 			Line:      str,
@@ -81,7 +86,7 @@ func (l *LogWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func RunLoki(config loki.Config) {
+func RunLoki(config loki.Config, wg *sync.WaitGroup) {
 
 	// This global is set to the config passed into the last call to `NewOverrides`. If we don't
 	// call it atleast once, the defaults are set to an empty struct.
@@ -110,6 +115,8 @@ func RunLoki(config loki.Config) {
 	level.Info(util_log.Logger).Log("msg", "Starting Loki", "version", version.Info())
 
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		err = t.Run()
 		util_log.CheckFatal("running loki", err)
 	}()

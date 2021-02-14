@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,18 +23,20 @@ func main() {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
-	// monitor for signals in the background
-	go func() {
-		s := <-sigc
-		fmt.Println("\nreceived signal:", s)
-		os.Exit(0)
-	}()
-
-	_, err := fidgserver.NewFidgserver()
+	fs, err := fidgserver.NewFidgserver()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	// monitor for signals in the background
+	go func() {
+		s := <-sigc
+		log.Println("msg", "fidgserver stopping", "signal", s)
+		fs.Stop()
+		log.Println("msg", "fidgserver stopped")
+		os.Exit(0)
+	}()
 
 	level.Info(util.Logger).Log("msg", "fidgserver running")
 
