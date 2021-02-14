@@ -1,6 +1,13 @@
 package model
 
+type AccelDTO struct {
+	X string `json:"x"`
+	Y string `json:"y"`
+	Z string `json:"z"`
+}
 
-type AccelData struct {
-
+type Accel struct {
+	X float64
+	Y float64
+	Z float64
 }

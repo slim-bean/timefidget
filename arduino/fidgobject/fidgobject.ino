@@ -68,7 +68,7 @@ void submitSensors(float x, float y, float z) {
   Serial.println(body);
 
   // submit POST request via HTTP
-  httpClient.begin(String("http://") + TIMEFIDGET_HOST + "/metrics");
+  httpClient.begin(String("http://") + TIMEFIDGET_HOST + "/push");
   httpClient.addHeader("Content-Type", "application/json");
 
   int httpCode = httpClient.POST(body);
@@ -108,5 +108,5 @@ void loop() {
 
   submitSensors(event.acceleration.x, event.acceleration.y, event.acceleration.z);
   
-  delay(5000); 
+  delay(1000); 
 }

@@ -5,6 +5,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/go-kit/kit/log/level"
+
+	"timefidget/pkg/fidgserver"
+	"timefidget/pkg/util"
 )
 
 func main() {
@@ -23,6 +28,15 @@ func main() {
 		os.Exit(0)
 	}()
 
+	_, err := fidgserver.NewFidgserver()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
+	level.Info(util.Logger).Log("msg", "fidgserver running")
+
+	for {
+	}
 
 }
