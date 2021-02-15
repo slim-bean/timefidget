@@ -68,3 +68,27 @@ Mainly I want to visualize time spent on projects at various levels of aggregati
 * Month
 * Quarter
 * Year? 
+
+## Running
+
+There are two ways to run the app:
+
+1. Standalone, just logs the current active position every 5 seconds
+2. Loki Embeded, a Loki server is started with the app and active position is sent to it every 5 seconds.
+
+For the first mode, you would need to configure Promtail or another agent to ingest the logs and send them to a Loki instance.
+
+Example:
+
+```shell
+./fidgserver [-port=8080]
+```
+
+For the second mode you need a Loki config file, an example is included:
+
+Example:
+
+```shell
+./fidgserver -config.file=fidgserver-local-config.yaml
+```
+
