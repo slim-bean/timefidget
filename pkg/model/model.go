@@ -5,13 +5,15 @@ const (
 )
 
 type AccelDTO struct {
-	X string `json:"x"`
-	Y string `json:"y"`
-	Z string `json:"z"`
+	ID string `json:"id"`
+	X  string `json:"x"`
+	Y  string `json:"y"`
+	Z  string `json:"z"`
 }
 
 type Accel struct {
-	X float64
-	Y float64
-	Z float64
+	ID string
+	X  float64
+	Y  float64
+	Z  float64
 }

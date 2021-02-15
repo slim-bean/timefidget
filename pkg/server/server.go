@@ -2,47 +2,21 @@ package server
 
 import (
 	"encoding/json"
-	"math"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/go-kit/kit/log/level"
-
 	"timefidget/pkg/model"
-	"timefidget/pkg/util"
 )
-
-const (
-	ON_MIN   = 8
-	ON_MAX   = 11
-	OFF_MIN  = -1
-	OFF_MAX  = 1
-	HALF_MIN = 5
-	HALF_MAX = 8
-	Z_THRESH = 5
-
-	P0 = ""
-	P1 = "Slack"
-	P2 = "Loki Community"
-	P3 = "Loki"
-	P4 = "Hiring"
-	P5 = "Sales"
-	P6 = "1-1"
-	P7 = "Management"
-	P8 = "BAU"
-)
-
-type Config struct {
-}
 
 type Server struct {
 }
 
-func NewServer() (*Server, error) {
+func NewServer(port int) (*Server, error) {
 	s := &Server{}
 
 	http.HandleFunc("/push", s.pushHandler)
-	go http.ListenAndServe("0.0.0.0:8080", nil)
+	go http.ListenAndServe(fmt.Sprintf("%s:%d", "0.0.0.0", port), nil)
 
 	return s, nil
 }
@@ -74,39 +48,13 @@ func (s *Server) pushHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	d := model.Accel{
-		X: xf,
-		Y: yf,
-		Z: zf,
+		ID: p.ID,
+		X:  xf,
+		Y:  yf,
+		Z:  zf,
 	}
 
-	if math.Abs(d.Z) > Z_THRESH {
-		// Off
-		//level.Info(util.Logger).Log("pos", "0")
-	} else if d.X > OFF_MIN && d.X < OFF_MAX && d.Y < -ON_MIN && d.Y > -ON_MAX {
-		// Position 1
-		level.Info(util.Logger).Log("type", "add", "pos", "1", model.ProjectName, P1)
-	} else if d.X > HALF_MIN && d.X < HALF_MAX && d.Y < -HALF_MIN && d.Y > -HALF_MAX {
-		// Position 2
-		level.Info(util.Logger).Log("type", "add", "pos", "2", model.ProjectName, P2)
-	} else if d.X > ON_MIN && d.X < ON_MAX && d.Y > OFF_MIN && d.Y < OFF_MAX {
-		// Position 3
-		level.Info(util.Logger).Log("type", "add", "pos", "3", model.ProjectName, P3)
-	} else if d.X > HALF_MIN && d.X < HALF_MAX && d.Y > HALF_MIN && d.Y < HALF_MAX {
-		// Position 4
-		level.Info(util.Logger).Log("type", "add", "pos", "4", model.ProjectName, P4)
-	} else if d.X > OFF_MIN && d.X < OFF_MAX && d.Y > ON_MIN && d.Y < ON_MAX {
-		// Position 5
-		level.Info(util.Logger).Log("type", "add", "pos", "5", model.ProjectName, P5)
-	} else if d.X < -HALF_MIN && d.X > -HALF_MAX && d.Y > HALF_MIN && d.Y < HALF_MAX {
-		// Position 6
-		level.Info(util.Logger).Log("type", "add", "pos", "6", model.ProjectName, P6)
-	} else if d.X < -ON_MIN && d.X > -ON_MAX && d.Y > OFF_MIN && d.Y < ON_MIN {
-		// Position 7
-		level.Info(util.Logger).Log("type", "add", "pos", "7", model.ProjectName, P7)
-	} else if d.X < -HALF_MIN && d.X > -HALF_MAX && d.Y < -HALF_MIN && d.Y > -HALF_MAX {
-		// Position 8
-		level.Info(util.Logger).Log("type", "add", "pos", "8", model.ProjectName, P8)
-	}
+	model.LogPosition(d.ID, d.X, d.Y, d.Z)
 
 	//level.Info(util.Logger).Log("msg", fmt.Sprintf("AccelDTO: %+v", d))
 }

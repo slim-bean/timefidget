@@ -25,6 +25,7 @@ type Config struct {
 
 func (c *Config) RegisterFlags(f *flag.FlagSet) {
 	f.StringVar(&c.configFile, "config.file", "", "yaml file to load")
+	f.IntVar(&c.Port, "port", 8080, "port to run push server on")
 	c.Config.RegisterFlags(f)
 }
 
@@ -65,7 +66,7 @@ func NewFidgserver() (*fidgserver, error) {
 	logger = level.NewFilter(logger, level.AllowAll())
 	util.Logger = logger
 
-	s, err := server.NewServer()
+	s, err := server.NewServer(config.Port)
 	if err != nil {
 		return nil, err
 	}

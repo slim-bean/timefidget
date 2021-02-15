@@ -60,6 +60,7 @@ void setup(void) {
 void submitSensors(float x, float y, float z) {
   // build hosted metrics json payload
   String body = String("{") +
+    "\"id\": \"" + ID + "\"," +
     "\"x\": \"" + x + "\"," + 
     "\"y\": \"" + y + "\"," + 
     "\"z\": \"" + z + "\"" + 
