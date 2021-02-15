@@ -41,6 +41,7 @@ func main() {
 	level.Info(util.Logger).Log("msg", "fidgserver running")
 
 	for {
+		select {}
 	}
 
 }
