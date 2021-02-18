@@ -27,6 +27,8 @@ func main() {
 	from := flag.String("from", "", "Start Time RFC339Nano 2006-01-02T15:04:05.999999999Z07:00")
 	to := flag.String("to", "", "End Time RFC339Nano 2006-01-02T15:04:05.999999999Z07:00")
 	project := flag.String("project", "", "source datasource config")
+	write := flag.Bool("write", false, "send output to Loki, false sends to stderr to review, true writes to Loki and stderr")
+	typeLabelVal := flag.String("typeLabelVal", "sub", "Set a value for the `type` label, default `sub` is used by dashboards for subtracting errors, useful for testing, requires write=true to send to Loki")
 	flag.Parse()
 
 	u, err := url.Parse("http://localhost:" + strconv.FormatInt(int64(5100), 10) + "/loki/api/v1/push")
@@ -66,7 +68,7 @@ func main() {
 		e := api.Entry{
 			Labels: model.LabelSet{
 				"job":  "timefidget",
-				"type": "sub",
+				"type": model.LabelValue(*typeLabelVal),
 			},
 			Entry: logproto.Entry{
 				Timestamp: ct,
@@ -74,10 +76,13 @@ func main() {
 			},
 		}
 		log.Println(e)
-		c.Chan() <- e
+		if *write {
+			c.Chan() <- e
+		}
 		ct = ct.Add(5 * time.Second)
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(25 * time.Millisecond)
 	}
+	c.Stop()
 
 }
 

@@ -73,7 +73,8 @@ func (l *LogWriter) Write(p []byte) (n int, err error) {
 	str := string(p)
 	e := api.Entry{
 		Labels: model.LabelSet{
-			"job": "timefidget",
+			"job":  "timefidget",
+			"type": "add",
 			//fidgmodel.ProjectName: model.LabelValue(project),
 		},
 		Entry: logproto.Entry{
