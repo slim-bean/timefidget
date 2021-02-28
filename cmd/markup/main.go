@@ -28,6 +28,7 @@ func main() {
 	to := flag.String("to", "", "End Time RFC339Nano 2006-01-02T15:04:05.999999999Z07:00")
 	project := flag.String("project", "", "source datasource config")
 	write := flag.Bool("write", false, "send output to Loki, false sends to stderr to review, true writes to Loki and stderr")
+	versionLabel := flag.String("version", "", "Set a value for a `version` label, used to add entries and avoid out of order errors")
 	typeLabelVal := flag.String("typeLabelVal", "sub", "Set a value for the `type` label, default `sub` is used by dashboards for subtracting errors, useful for testing, requires write=true to send to Loki")
 	flag.Parse()
 
@@ -59,17 +60,21 @@ func main() {
 	ct := f
 	buf := &bytes.Buffer{}
 	enc := logfmt.NewEncoder(buf)
-	err = enc.EncodeKeyvals("level", "info", "type", "sub", fs_model.ProjectName, *project)
+	err = enc.EncodeKeyvals("level", "info", "type", *typeLabelVal, fs_model.ProjectName, *project)
 	if err != nil {
 		panic(err)
 	}
 	line := buf.String()
 	for ct.Before(t) {
+		lbls := model.LabelSet{
+			"job":  "timefidget",
+			"type": model.LabelValue(*typeLabelVal),
+		}
+		if *versionLabel != "" {
+			lbls["version"] = model.LabelValue(*versionLabel)
+		}
 		e := api.Entry{
-			Labels: model.LabelSet{
-				"job":  "timefidget",
-				"type": model.LabelValue(*typeLabelVal),
-			},
+			Labels: lbls,
 			Entry: logproto.Entry{
 				Timestamp: ct,
 				Line:      line,
