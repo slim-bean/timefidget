@@ -739,8 +739,8 @@ github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/ad
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/grafana/gocql v0.0.0-20200605141915-ba5dc39ece85 h1:xLuzPoOzdfNb/RF/IENCw+oLVdZB4G21VPhkHBgwSHY=
 github.com/grafana/gocql v0.0.0-20200605141915-ba5dc39ece85/go.mod h1:crI9WX6p0IhrqB+DqIUHulRW853PaNFf7o4UprV//3I=
-github.com/grafana/loki v1.6.2-0.20210212140224-76e713f57dc4 h1:WzCdgGImkaVJssObp0KIw+jH7NRBcWFTbTdcnKBRyz4=
-github.com/grafana/loki v1.6.2-0.20210212140224-76e713f57dc4/go.mod h1:zD6R/qL5IP9gfpDHmlxeY3g5c5SuABCxRqOpS9VZ67o=
+github.com/grafana/loki v1.6.2-0.20210227183507-877f524c36bf h1:FMUKxQt2PBnOewCtk5QrrFRwDOoMcXhz+k0pVmZLZno=
+github.com/grafana/loki v1.6.2-0.20210227183507-877f524c36bf/go.mod h1:zD6R/qL5IP9gfpDHmlxeY3g5c5SuABCxRqOpS9VZ67o=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 h1:THDBEeQ9xZ8JEaCLyLQqXMMdRqNr0QAUJTIkQAUtFjg=

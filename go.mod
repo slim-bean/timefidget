@@ -5,7 +5,8 @@ go 1.15
 require (
 	github.com/cortexproject/cortex v1.6.1-0.20210204145131-7dac81171c66
 	github.com/go-kit/kit v0.10.0
-	github.com/grafana/loki v1.6.2-0.20210212140224-76e713f57dc4
+	github.com/go-logfmt/logfmt v0.5.0
+	github.com/grafana/loki v1.6.2-0.20210227183507-877f524c36bf
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/common v0.15.0
 	github.com/weaveworks/common v0.0.0-20210112142934-23c8d7fa6120

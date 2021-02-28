@@ -22,7 +22,6 @@ import (
 
 	"github.com/grafana/loki/pkg/storage/stores/shipper/downloads"
 	"github.com/grafana/loki/pkg/storage/stores/shipper/uploads"
-	shipper_util "github.com/grafana/loki/pkg/storage/stores/shipper/util"
 	"github.com/grafana/loki/pkg/storage/stores/util"
 )
 
@@ -55,14 +54,15 @@ type boltDBIndexClient interface {
 }
 
 type Config struct {
-	ActiveIndexDirectory string        `yaml:"active_index_directory"`
-	SharedStoreType      string        `yaml:"shared_store"`
-	CacheLocation        string        `yaml:"cache_location"`
-	CacheTTL             time.Duration `yaml:"cache_ttl"`
-	ResyncInterval       time.Duration `yaml:"resync_interval"`
-	QueryReadyNumDays    int           `yaml:"query_ready_num_days"`
-	IngesterName         string        `yaml:"-"`
-	Mode                 int           `yaml:"-"`
+	ActiveIndexDirectory   string        `yaml:"active_index_directory"`
+	SharedStoreType        string        `yaml:"shared_store"`
+	CacheLocation          string        `yaml:"cache_location"`
+	CacheTTL               time.Duration `yaml:"cache_ttl"`
+	ResyncInterval         time.Duration `yaml:"resync_interval"`
+	QueryReadyNumDays      int           `yaml:"query_ready_num_days"`
+	IngesterName           string        `yaml:"-"`
+	Mode                   int           `yaml:"-"`
+	IngesterDBRetainPeriod time.Duration `yaml:"-"`
 }
 
 // RegisterFlags registers flags.
@@ -102,7 +102,7 @@ func NewShipper(cfg Config, storageClient chunk.ObjectClient, registerer prometh
 	return &shipper, nil
 }
 
-func (s *Shipper) init(objectClient chunk.ObjectClient, registerer prometheus.Registerer) error {
+func (s *Shipper) init(storageClient chunk.ObjectClient, registerer prometheus.Registerer) error {
 	// When we run with target querier we don't have ActiveIndexDirectory set so using CacheLocation instead.
 	// Also it doesn't matter which directory we use since BoltDBIndexClient doesn't do anything with it but it is good to have a valid path.
 	boltdbIndexClientDir := s.cfg.ActiveIndexDirectory
@@ -116,11 +116,7 @@ func (s *Shipper) init(objectClient chunk.ObjectClient, registerer prometheus.Re
 		return err
 	}
 
-	objectClient = util.NewPrefixedObjectClient(objectClient, StorageKeyPrefix)
-
-	if s.cfg.SharedStoreType != "filesystem" {
-		objectClient = shipper_util.NewCachedObjectClient(objectClient)
-	}
+	prefixedObjectClient := util.NewPrefixedObjectClient(storageClient, StorageKeyPrefix)
 
 	if s.cfg.Mode != ModeReadOnly {
 		uploader, err := s.getUploaderName()
@@ -132,9 +128,9 @@ func (s *Shipper) init(objectClient chunk.ObjectClient, registerer prometheus.Re
 			Uploader:       uploader,
 			IndexDir:       s.cfg.ActiveIndexDirectory,
 			UploadInterval: UploadInterval,
-			DBRetainPeriod: s.cfg.ResyncInterval + 2*time.Minute,
+			DBRetainPeriod: s.cfg.IngesterDBRetainPeriod,
 		}
-		uploadsManager, err := uploads.NewTableManager(cfg, s.boltDBIndexClient, objectClient, registerer)
+		uploadsManager, err := uploads.NewTableManager(cfg, s.boltDBIndexClient, prefixedObjectClient, registerer)
 		if err != nil {
 			return err
 		}
@@ -149,7 +145,7 @@ func (s *Shipper) init(objectClient chunk.ObjectClient, registerer prometheus.Re
 			CacheTTL:          s.cfg.CacheTTL,
 			QueryReadyNumDays: s.cfg.QueryReadyNumDays,
 		}
-		downloadsManager, err := downloads.NewTableManager(cfg, s.boltDBIndexClient, objectClient, registerer)
+		downloadsManager, err := downloads.NewTableManager(cfg, s.boltDBIndexClient, prefixedObjectClient, registerer)
 		if err != nil {
 			return err
 		}
