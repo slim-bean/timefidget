@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"strconv"
 	"sync"
 	"time"
 
@@ -29,8 +28,8 @@ type LogWriter struct {
 	client client.Client
 }
 
-func NewLogWriter(config loki.Config) (*LogWriter, error) {
-	u, err := url.Parse("http://localhost:" + strconv.FormatInt(int64(config.Server.HTTPListenPort), 10) + "/loki/api/v1/push")
+func NewLogWriter(urlString string) (*LogWriter, error) {
+	u, err := url.Parse(urlString)
 	if err != nil {
 		return nil, err
 	}

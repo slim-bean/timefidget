@@ -69,7 +69,7 @@ void submitSensors(float x, float y, float z) {
   Serial.println(body);
 
   // submit POST request via HTTP
-  httpClient.begin(String("http://") + TIMEFIDGET_HOST + "/push");
+  httpClient.begin(String("https://") + TIMEFIDGET_HOST + "/push", ROOT_CA);
   httpClient.addHeader("Content-Type", "application/json");
 
   int httpCode = httpClient.POST(body);

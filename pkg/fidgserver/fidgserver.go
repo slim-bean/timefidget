@@ -3,6 +3,7 @@ package fidgserver
 import (
 	"flag"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/cortexproject/cortex/pkg/util/flagext"
@@ -20,12 +21,14 @@ type Config struct {
 	loki.Config `yaml:",inline"`
 	EmbedLoki   bool   `yaml:"embed_loki"`
 	Port        int    `yaml:"port"`
+	LokiURL     string `yamle:"loki_url"`
 	configFile  string `yaml:"-"`
 }
 
 func (c *Config) RegisterFlags(f *flag.FlagSet) {
 	f.StringVar(&c.configFile, "config.file", "", "yaml file to load")
 	f.IntVar(&c.Port, "port", 8080, "port to run push server on")
+	f.StringVar(&c.LokiURL, "loki.url", "", "Loki server URL (Full Path)")
 	c.Config.RegisterFlags(f)
 }
 
@@ -54,7 +57,14 @@ func NewFidgserver() (*fidgserver, error) {
 
 	if config.EmbedLoki {
 		lokiembed.RunLoki(config.Config, &fs.shutdown)
-		lw, err := lokiembed.NewLogWriter(config.Config)
+		url := "http://localhost:" + strconv.FormatInt(int64(config.Server.HTTPListenPort), 10) + "/loki/api/v1/push"
+		lw, err := lokiembed.NewLogWriter(url)
+		if err != nil {
+			return nil, err
+		}
+		logger = log.NewLogfmtLogger(log.NewSyncWriter(lw))
+	} else if config.LokiURL != "" {
+		lw, err := lokiembed.NewLogWriter(config.LokiURL)
 		if err != nil {
 			return nil, err
 		}

@@ -7,6 +7,7 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/grafana/loki v1.6.2-0.20210227183507-877f524c36bf
+	github.com/magefile/mage v1.11.0
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/common v0.15.0
 	github.com/weaveworks/common v0.0.0-20210112142934-23c8d7fa6120
