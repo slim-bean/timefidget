@@ -18,7 +18,7 @@ const (
 	Z_THRESH = 5
 
 	P0 = ""
-	P1 = "Slack"
+	P1 = "Loki Ops"
 	P2 = "Loki Community"
 	P3 = "Loki"
 	P4 = "Hiring"
