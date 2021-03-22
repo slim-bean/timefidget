@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/cortexproject/cortex/pkg/util"
@@ -32,7 +31,7 @@ func main() {
 	typeLabelVal := flag.String("typeLabelVal", "sub", "Set a value for the `type` label, default `sub` is used by dashboards for subtracting errors, useful for testing, requires write=true to send to Loki")
 	flag.Parse()
 
-	u, err := url.Parse("http://localhost:" + strconv.FormatInt(int64(5100), 10) + "/loki/api/v1/push")
+	u, err := url.Parse("https://loki-personal.edjusted.com/loki/api/v1/push")
 	if err != nil {
 		panic(err)
 	}
