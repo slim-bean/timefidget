@@ -1,4 +1,5 @@
-config.h
+config_test.h
 .idea/
 cmd/fidgserver/fidgserver
 cmd/markup/markup
+.vscode/

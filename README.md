@@ -15,10 +15,6 @@ Inspired by [TimeFlip](https://timeflip.io/), in fact I ordered a TimeFlip2 but 
 * Be able to modify entries. (Mistakes happen)
 * Visualize summaries in Grafana
 
-## Non Goals
-
-* 
-
 ## Design
 
 ### Storage
@@ -47,17 +43,15 @@ This is also not a bad fit, super simple, easy to edit files but this is a prett
 
 #### Loki
 
-While probably not really built for this purpose that has never stopped me before. 
+While probably not really built for this purpose that has never stopped me before. :)
 
-Loki 2.0 added features which would allow extracting numbers from log lines and aggregating in useful ways
+Loki does meet all the requirements because I can write new series which can be subtracted from existing series to make corrections.
 
-```
-sum(sum_over_time{project="loki",action="add"} | logfmt | unwrap duration [5m]) - sum(sum_over_time{project="loki",action="subtract"} | logfmt | unwrap duration [5m])
-```
+The idea is to log an entry in Loki every 5s, each entry then equates to 5s of time on that project.  
 
-Instant queries would be best for this however, Loki doesn't currently split or shard instant queries so range queries will work better over longer time periods.
+This allows using a `count_over_time` function to see how long time was spent on each project.
 
-Using combinations of instant queries, range queries $__interval and reduce transforms in Grafana it should be possible to visualize the desired output.
+See below to see how we handle corrections with Loki as well as how the data can be visualized.
 
 ### Visualization
 
@@ -69,26 +63,104 @@ Mainly I want to visualize time spent on projects at various levels of aggregati
 * Quarter
 * Year? 
 
+### Dashboards
+
+(Sorry I need to get these published)
+
+The main query for using this data looks like this:
+
+```
+# All the counts are /12 because there is one entry every 5 seconds, therefore every entry represents 5s of time. 
+# If we divide the count by 12 we can turn the result into minutes.
+# e.g. 36 counts would be 36 5s blocks of time = 180s or 3minutes total
+# 36/12 = 3 (another way to think about this is there are 12 5s intervals in a minute)
+
+# If there were corrections, take the count of all entries where type="add" and subtract all the entries where type="sub"
+(sum by (project) ((count_over_time({job="timefidget", type="add"} | logfmt | project != "" [$__interval])/12)) 
+  - (sum by (project) (count_over_time({job="timefidget", type="sub"} | logfmt | project != "" [$__interval])/12))) 
+# If there were no corrections just count all the entries where type="add"
+or (sum by (project) (count_over_time({job="timefidget", type="add"} | logfmt | project != "" [$__interval])/12))
+```
+
+This query will output the correct time in minutes for each project based on the time window of the dashboard query, and because we use $__interval it should be correct no matter what time window you select.
+
 ## Running
 
-There are two ways to run the app:
+**NOTE** When I first built this I hadn't built the libraries for sending data directly from Arduino to Loki so instead I had a small Go server in the middle.
 
-1. Standalone, just logs the current active position every 5 seconds
-2. Loki Embeded, a Loki server is started with the app and active position is sent to it every 5 seconds.
+Now that this [library](https://github.com/grafana/loki-arduino) exists the ESP32 can send directly to Loki without the need for anything in the middle.
 
-For the first mode, you would need to configure Promtail or another agent to ingest the logs and send them to a Loki instance.
+Currently the `fidgserver` code all exists in this project but you don't need it anymore.
 
-Example:
+You can instead just checkout the `arduino/fidgobject` folder for the Arduino sketch.
 
-```shell
-./fidgserver [-port=8080]
+## Making corrections
+
+It is possible to make corrections although it's currently quite cumbersome...
+
+**NOTE** I'm hopefully going to build this into a Grafana plugin to make this something you can do from the UI, but until then, I'm sorry....
+
+First you will need to build the `markup` command line tool in `cmd/markup` with `make build-markup`
+
+This tool works by sending events to Loki with timestamps matching the range you wish to make changes. It essentially writes entries 5s apart just like the actual device does.
+
+Two types of corrections can be made:
+
+1. subtracting incorrect events
+1. adding events
+
+### Subtracting events
+
+```
+cmd/markup/markup -from=2021-05-19T10:00:00-04:00 -to=2021-05-19T10:28:10-04:00 -project="1-1"
 ```
 
-For the second mode you need a Loki config file, an example is included:
+This will add "subtraction entries" for the `1-1` project for the provided time range, if you run this command as is it will just output what it will send.
 
-Example:
+To actually send the data
 
-```shell
-./fidgserver -config.file=fidgserver-local-config.yaml
+```
+cmd/markup/markup -from=2021-05-19T10:00:00-04:00 -to=2021-05-19T10:28:10-04:00 -project="1-1" -write=true
 ```
 
+### Adding events
+
+We need to add a few more flags, `typeLabelVal` is confusing and I'm sorry but it will always be `-typeLabelVal=add` (what this does is add `type=add` label to the data)
+
+`version` is a label which allows you to further correct for mistakes, I will explain this more below, but because the initial entry would have been created with `type=add` and so will these entries, we need to make a new stream so that Loki doesn't yell at us for out of order entries by trying to write data to an existing stream. That's what this label does.
+
+```
+cmd/markup/markup -from=2021-06-11T09:30:00-04:00 -to=2021-06-11T10:30:00-04:00 -project="1-1" -typeLabelVal=add -version=1
+```
+
+Same as before this command will only show you what it's going to do until you do:
+
+```
+cmd/markup/markup -from=2021-06-11T09:30:00-04:00 -to=2021-06-11T10:30:00-04:00 -project="1-1" -typeLabelVal=add -version=1 -write=true
+```
+
+### Version label
+
+As briefly mentioned above, Loki will not allow you to add older entries to an existing stream. A stream is defined by the labels. 
+
+When events are sent from the device they will have these labels:
+
+`{job="timefidget",type="add"}`
+
+When we make subtractions we send
+
+`{job="timefidget",type="sub"}`
+
+These are separate streams, so no problem, but when we go to add and we already have data we _will_ have a problem so we do this:
+
+`{job="timefidget",type="add",version="1"}`
+
+This makes a new stream but we don't really care about the version label it will be ignored in our dashboards.
+
+This also works for subtractions if you made a mistake you can also do
+
+```
+cmd/markup/markup -from=2021-05-19T10:00:00-04:00 -to=2021-05-19T10:28:10-04:00 -project="1-1" -version=2 -write=true
+```
+
+You can increment the version label as much as you want to add more streams to fix mistakes, the dashboard queries will always take any values for `add` and subtract any values with the `sub` labels to show the resulting difference.
