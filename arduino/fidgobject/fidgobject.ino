@@ -10,14 +10,14 @@
 #include <Math.h>
 
 // Change these to change your tracked projects
-#define P1 "Loki Ops"
-#define P2 "Loki Community"
-#define P3 "Loki"
-#define P4 "Hiring"
-#define P5 "Sales"
-#define P6 "1-1"
-#define P7 "Management"
-#define P8 "BAU"
+#define P1 "Unplanned"
+#define P2 "Hackathon"
+#define P3 ""
+#define P4 ""
+#define P5 ""
+#define P6 ""
+#define P7 ""
+#define P8 ""
 
 
 // These set the thresholds used to know which way gravity is pointing and thus which side is up, 
@@ -43,7 +43,7 @@ LokiClient client(transport);
 LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\"}");
 LokiStreams streams(1);
 
-const char* id = "w1";
+const char* id = "w2";
 const char* formatString = "id=\"%s\" type=add pos=%s project=\"%s\"";
 
 void setup(void) {
@@ -126,42 +126,67 @@ void loop() {
   float y = event.acceleration.y;
   float z = event.acceleration.z;
 
+  uint64_t start = millis();
+
   if (abs(z) > Z_THRESH) {
     // Off
     //level.Info(util.Logger).Log("pos", "0")
   }
   else if (x > OFF_MIN && x < OFF_MAX && y < -ON_MIN && y > -ON_MAX) {
     // Position 1
-    sendToLoki("1", P1);
+    if (strlen(P1) != 0) {
+      sendToLoki("1", P1);
+    }
   }
   else if (x > HALF_MIN && x < HALF_MAX && y < -HALF_MIN && y > -HALF_MAX) {
     // Position 2
-    sendToLoki("2", P2);
+    if (strlen(P2) != 0) {
+      sendToLoki("2", P2);
+    }
   }
   else if (x > ON_MIN && x < ON_MAX && y > OFF_MIN && y < OFF_MAX) {
     // Position 3
-    sendToLoki("3", P3);
+    if (strlen(P3) != 0) {
+      sendToLoki("3", P3);
+    }
   }
   else if (x > HALF_MIN && x < HALF_MAX && y > HALF_MIN && y < HALF_MAX) {
     // Position 4
-    sendToLoki("4", P4);
+    if (strlen(P4) != 0) {
+      sendToLoki("4", P4);
+    }
   }
   else if (x > OFF_MIN && x < OFF_MAX && y > ON_MIN && y < ON_MAX) {
     // Position 5
-    sendToLoki("5", P5);
+    if (strlen(P5) != 0) {
+      sendToLoki("5", P5);
+    }
   }
   else if (x < -HALF_MIN && x > -HALF_MAX && y > HALF_MIN && y < HALF_MAX) {
     // Position 6
-    sendToLoki("6", P6);
+    if (strlen(P6) != 0) {
+      sendToLoki("6", P6);
+    }
   }
   else if (x < -ON_MIN && x > -ON_MAX && y > OFF_MIN && y < ON_MIN) {
     // Position 7
-    sendToLoki("7", P7);
+    if (strlen(P7) != 0) {
+      sendToLoki("7", P7);
+    }
   }
   else if (x < -HALF_MIN && x > -HALF_MAX && y < -HALF_MIN && y > -HALF_MAX) {
     // Position 8
-    sendToLoki("8", P8);
+    if (strlen(P8) != 0) {
+      sendToLoki("8", P8);
+    }
   }
-
-  delay(5000);
+  uint64_t delayms = 5000 - (millis() - start);
+  // If the delay is longer than 5000ms we likely timed out and the send took longer than 5s so just send right away.
+  if (delayms > 5000) {
+    delayms = 0;
+  }
+  Serial.print("Sleeping ");
+  Serial.print(delayms);
+  Serial.println("ms");
+  delay(delayms);
 }
