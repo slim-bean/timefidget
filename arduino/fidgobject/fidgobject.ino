@@ -11,7 +11,7 @@
 
 // Change these to change your tracked projects
 #define P1 "Unplanned"
-#define P2 "Hackathon"
+#define P2 "Planned"
 #define P3 ""
 #define P4 ""
 #define P5 ""
@@ -40,7 +40,7 @@ LokiClient client(transport);
 
 
 // Create our stream for entries
-LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\"}");
+LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\",tf=\"2\"}");
 LokiStreams streams(1);
 
 const char* id = "w2";
