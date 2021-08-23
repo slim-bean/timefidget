@@ -1,5 +1,6 @@
 // Basic demo for accelerometer readings from Adafruit MSA301
 
+#include "w1.h"
 #include <Wire.h>
 #include <Adafruit_MSA301.h>
 #include <Adafruit_Sensor.h>
@@ -8,16 +9,6 @@
 #include <PromLokiTransport.h>
 #include <GrafanaLoki.h>
 #include <Math.h>
-
-// Change these to change your tracked projects
-#define P1 "Unplanned"
-#define P2 "Planned"
-#define P3 ""
-#define P4 ""
-#define P5 ""
-#define P6 ""
-#define P7 ""
-#define P8 ""
 
 
 // These set the thresholds used to know which way gravity is pointing and thus which side is up, 
@@ -40,10 +31,10 @@ LokiClient client(transport);
 
 
 // Create our stream for entries
-LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\",tf=\"2\"}");
+LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\",id=\""ID"\"}");
 LokiStreams streams(1);
 
-const char* id = "w2";
+const char* id = ID;
 const char* formatString = "id=\"%s\" type=add pos=%s project=\"%s\"";
 
 void setup(void) {
