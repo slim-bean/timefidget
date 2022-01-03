@@ -84,7 +84,7 @@ func main() {
 			c.Chan() <- e
 		}
 		ct = ct.Add(5 * time.Second)
-		time.Sleep(25 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 	}
 	c.Stop()
 
