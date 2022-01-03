@@ -4,7 +4,7 @@
 
 // Change these to change your tracked projects
 #define P1 "Loki Ops"
-#define P2 "Loki Community"
+#define P2 "Loki Customer"
 #define P3 "Loki"
 #define P4 "Hiring"
 #define P5 "Sales"
