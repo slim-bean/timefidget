@@ -11,13 +11,13 @@
 
 // Change these to change your tracked projects
 #define P1 "Unplanned"
-#define P2 "Planned"
+#define P2 "Contributor"
 #define P3 "Network"
 #define P4 "Hackathon"
 #define P5 ""
 #define P6 ""
 #define P7 ""
-#define P8 ""
+#define P8 "Leader"
 
 
 // These set the thresholds used to know which way gravity is pointing and thus which side is up, 
