@@ -40,7 +40,7 @@ LokiClient client(transport);
 
 
 // Create our stream for entries
-LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\",tf=\"2\"}");
+LokiStream tf(2, 100, "{job=\"timefidget\",type=\"add\",tf=\"w2\"}");
 LokiStreams streams(1);
 
 const char* id = "w2";
