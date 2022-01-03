@@ -84,16 +84,6 @@ or (sum by (project) (count_over_time({job="timefidget", type="add"} | logfmt | 
 
 This query will output the correct time in minutes for each project based on the time window of the dashboard query, and because we use $__interval it should be correct no matter what time window you select.
 
-## Running
-
-**NOTE** When I first built this I hadn't built the libraries for sending data directly from Arduino to Loki so instead I had a small Go server in the middle.
-
-Now that this [library](https://github.com/grafana/loki-arduino) exists the ESP32 can send directly to Loki without the need for anything in the middle.
-
-Currently the `fidgserver` code all exists in this project but you don't need it anymore.
-
-You can instead just checkout the `arduino/fidgobject` folder for the Arduino sketch.
-
 ## Making corrections
 
 It is possible to make corrections although it's currently quite cumbersome...

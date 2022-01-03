@@ -248,7 +248,7 @@ func (q *mergeGenericQuerier) LabelNames() ([]string, Warnings, error) {
 
 // Close releases the resources of the generic querier.
 func (q *mergeGenericQuerier) Close() error {
-	errs := tsdb_errors.NewMulti()
+	errs := tsdb_errors.MultiError{}
 	for _, querier := range q.queriers {
 		if err := querier.Close(); err != nil {
 			errs.Add(err)
@@ -534,9 +534,11 @@ func (c *chainSampleIterator) Next() bool {
 }
 
 func (c *chainSampleIterator) Err() error {
-	errs := tsdb_errors.NewMulti()
+	var errs tsdb_errors.MultiError
 	for _, iter := range c.iterators {
-		errs.Add(iter.Err())
+		if err := iter.Err(); err != nil {
+			errs.Add(err)
+		}
 	}
 	return errs.Err()
 }
@@ -679,9 +681,11 @@ func (c *compactChunkIterator) Next() bool {
 }
 
 func (c *compactChunkIterator) Err() error {
-	errs := tsdb_errors.NewMulti()
+	var errs tsdb_errors.MultiError
 	for _, iter := range c.iterators {
-		errs.Add(iter.Err())
+		if err := iter.Err(); err != nil {
+			errs.Add(err)
+		}
 	}
 	errs.Add(c.err)
 	return errs.Err()

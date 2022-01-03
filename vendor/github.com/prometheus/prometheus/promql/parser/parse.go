@@ -15,7 +15,6 @@ package parser
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"runtime"
 	"strconv"
@@ -27,7 +26,6 @@ import (
 	"github.com/prometheus/common/model"
 
 	"github.com/prometheus/prometheus/pkg/labels"
-	"github.com/prometheus/prometheus/pkg/timestamp"
 	"github.com/prometheus/prometheus/util/strutil"
 )
 
@@ -320,7 +318,7 @@ func (p *parser) Lex(lval *yySymType) int {
 	case EOF:
 		lval.item.Typ = EOF
 		p.InjectItem(0)
-	case RIGHT_BRACE, RIGHT_PAREN, RIGHT_BRACKET, DURATION, NUMBER:
+	case RIGHT_BRACE, RIGHT_PAREN, RIGHT_BRACKET, DURATION:
 		p.lastClosing = lval.item.Pos + Pos(len(lval.item.Val))
 	}
 
@@ -579,27 +577,12 @@ func (p *parser) checkAST(node Node) (typ ValueType) {
 	case *SubqueryExpr:
 		ty := p.checkAST(n.Expr)
 		if ty != ValueTypeVector {
-			p.addParseErrf(n.PositionRange(), "subquery is only allowed on instant vector, got %s instead", ty)
+			p.addParseErrf(n.PositionRange(), "subquery is only allowed on instant vector, got %s in %q instead", ty, n.String())
 		}
 	case *MatrixSelector:
 		p.checkAST(n.VectorSelector)
 
 	case *VectorSelector:
-		if n.Name != "" {
-			// In this case the last LabelMatcher is checking for the metric name
-			// set outside the braces. This checks if the name has already been set
-			// previously.
-			for _, m := range n.LabelMatchers[0 : len(n.LabelMatchers)-1] {
-				if m != nil && m.Name == labels.MetricName {
-					p.addParseErrf(n.PositionRange(), "metric name must not be set twice: %q or %q", n.Name, m.Value)
-				}
-			}
-
-			// Skip the check for non-empty matchers because an explicit
-			// metric name is a non-empty matcher.
-			break
-		}
-
 		// A Vector selector must contain at least one non-empty matcher to prevent
 		// implicit selection of all metrics (e.g. by a typo).
 		notEmpty := false
@@ -611,6 +594,17 @@ func (p *parser) checkAST(node Node) (typ ValueType) {
 		}
 		if !notEmpty {
 			p.addParseErrf(n.PositionRange(), "vector selector must contain at least one non-empty matcher")
+		}
+
+		if n.Name != "" {
+			// In this case the last LabelMatcher is checking for the metric name
+			// set outside the braces. This checks if the name has already been set
+			// previously
+			for _, m := range n.LabelMatchers[0 : len(n.LabelMatchers)-1] {
+				if m != nil && m.Name == labels.MetricName {
+					p.addParseErrf(n.PositionRange(), "metric name must not be set twice: %q or %q", n.Name, m.Value)
+				}
+			}
 		}
 
 	case *NumberLiteral, *StringLiteral:
@@ -682,92 +676,34 @@ func (p *parser) newLabelMatcher(label Item, operator Item, value Item) *labels.
 	return m
 }
 
-// addOffset is used to set the offset in the generated parser.
 func (p *parser) addOffset(e Node, offset time.Duration) {
-	var orgoffsetp *time.Duration
+	var offsetp *time.Duration
 	var endPosp *Pos
 
 	switch s := e.(type) {
 	case *VectorSelector:
-		orgoffsetp = &s.OriginalOffset
+		offsetp = &s.Offset
 		endPosp = &s.PosRange.End
 	case *MatrixSelector:
-		vs, ok := s.VectorSelector.(*VectorSelector)
-		if !ok {
-			p.addParseErrf(e.PositionRange(), "ranges only allowed for vector selectors")
-			return
+		if vs, ok := s.VectorSelector.(*VectorSelector); ok {
+			offsetp = &vs.Offset
 		}
-		orgoffsetp = &vs.OriginalOffset
 		endPosp = &s.EndPos
 	case *SubqueryExpr:
-		orgoffsetp = &s.OriginalOffset
+		offsetp = &s.Offset
 		endPosp = &s.EndPos
 	default:
-		p.addParseErrf(e.PositionRange(), "offset modifier must be preceded by an instant selector vector or range vector selector or a subquery")
+		p.addParseErrf(e.PositionRange(), "offset modifier must be preceded by an instant or range selector, but follows a %T instead", e)
 		return
 	}
 
 	// it is already ensured by parseDuration func that there never will be a zero offset modifier
-	if *orgoffsetp != 0 {
+	if *offsetp != 0 {
 		p.addParseErrf(e.PositionRange(), "offset may not be set multiple times")
-	} else if orgoffsetp != nil {
-		*orgoffsetp = offset
+	} else if offsetp != nil {
+		*offsetp = offset
 	}
 
 	*endPosp = p.lastClosing
-}
 
-// setTimestamp is used to set the timestamp from the @ modifier in the generated parser.
-func (p *parser) setTimestamp(e Node, ts float64) {
-	if math.IsInf(ts, -1) || math.IsInf(ts, 1) || math.IsNaN(ts) ||
-		ts >= float64(math.MaxInt64) || ts <= float64(math.MinInt64) {
-		p.addParseErrf(e.PositionRange(), "timestamp out of bounds for @ modifier: %f", ts)
-	}
-	var timestampp **int64
-	var endPosp *Pos
-
-	switch s := e.(type) {
-	case *VectorSelector:
-		timestampp = &s.Timestamp
-		endPosp = &s.PosRange.End
-	case *MatrixSelector:
-		vs, ok := s.VectorSelector.(*VectorSelector)
-		if !ok {
-			p.addParseErrf(e.PositionRange(), "ranges only allowed for vector selectors")
-			return
-		}
-		timestampp = &vs.Timestamp
-		endPosp = &s.EndPos
-	case *SubqueryExpr:
-		timestampp = &s.Timestamp
-		endPosp = &s.EndPos
-	default:
-		p.addParseErrf(e.PositionRange(), "@ modifier must be preceded by an instant selector vector or range vector selector or a subquery")
-		return
-	}
-
-	if *timestampp != nil {
-		p.addParseErrf(e.PositionRange(), "@ <timestamp> may not be set multiple times")
-	} else if timestampp != nil {
-		*timestampp = new(int64)
-		**timestampp = timestamp.FromFloatSeconds(ts)
-	}
-
-	*endPosp = p.lastClosing
-}
-
-func MustLabelMatcher(mt labels.MatchType, name, val string) *labels.Matcher {
-	m, err := labels.NewMatcher(mt, name, val)
-	if err != nil {
-		panic(err)
-	}
-	return m
-}
-
-func MustGetFunction(name string) *Function {
-	f, ok := getFunction(name)
-	if !ok {
-		panic(errors.Errorf("function %q does not exist", name))
-	}
-	return f
 }

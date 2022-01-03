@@ -230,13 +230,14 @@ func cutSegmentFile(dirFile *os.File, magicNumber uint32, chunksFormat byte, all
 	}
 	defer func() {
 		if returnErr != nil {
-			errs := tsdb_errors.NewMulti(returnErr)
+			var merr tsdb_errors.MultiError
+			merr.Add(returnErr)
 			if f != nil {
-				errs.Add(f.Close())
+				merr.Add(f.Close())
 			}
 			// Calling RemoveAll on a non-existent file does not return error.
-			errs.Add(os.RemoveAll(ptmp))
-			returnErr = errs.Err()
+			merr.Add(os.RemoveAll(ptmp))
+			returnErr = merr.Err()
 		}
 	}()
 	if allocSize > 0 {
@@ -462,16 +463,16 @@ func NewDirReader(dir string, pool chunkenc.Pool) (*Reader, error) {
 	}
 
 	var (
-		bs []ByteSlice
-		cs []io.Closer
+		bs   []ByteSlice
+		cs   []io.Closer
+		merr tsdb_errors.MultiError
 	)
 	for _, fn := range files {
 		f, err := fileutil.OpenMmapFile(fn)
 		if err != nil {
-			return nil, tsdb_errors.NewMulti(
-				errors.Wrap(err, "mmap files"),
-				tsdb_errors.CloseAll(cs),
-			).Err()
+			merr.Add(errors.Wrap(err, "mmap files"))
+			merr.Add(closeAll(cs))
+			return nil, merr
 		}
 		cs = append(cs, f)
 		bs = append(bs, realByteSlice(f.Bytes()))
@@ -479,16 +480,15 @@ func NewDirReader(dir string, pool chunkenc.Pool) (*Reader, error) {
 
 	reader, err := newReader(bs, cs, pool)
 	if err != nil {
-		return nil, tsdb_errors.NewMulti(
-			err,
-			tsdb_errors.CloseAll(cs),
-		).Err()
+		merr.Add(err)
+		merr.Add(closeAll(cs))
+		return nil, merr
 	}
 	return reader, nil
 }
 
 func (s *Reader) Close() error {
-	return tsdb_errors.CloseAll(s.cs)
+	return closeAll(s.cs)
 }
 
 // Size returns the size of the chunks.
@@ -587,4 +587,13 @@ func sequenceFiles(dir string) ([]string, error) {
 		res = append(res, filepath.Join(dir, fi.Name()))
 	}
 	return res, nil
+}
+
+func closeAll(cs []io.Closer) error {
+	var merr tsdb_errors.MultiError
+
+	for _, c := range cs {
+		merr.Add(c.Close())
+	}
+	return merr.Err()
 }

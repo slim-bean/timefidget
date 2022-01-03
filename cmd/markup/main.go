@@ -3,22 +3,17 @@ package main
 import (
 	"bytes"
 	"flag"
+	"github.com/go-logfmt/logfmt"
+	"github.com/grafana/loki-client-go/pkg/backoff"
+	"github.com/grafana/loki-client-go/pkg/urlutil"
+	"github.com/prometheus/common/model"
 	"log"
 	"net/url"
-	"os"
 	"time"
 
-	"github.com/cortexproject/cortex/pkg/util"
-	"github.com/cortexproject/cortex/pkg/util/flagext"
-	gklog "github.com/go-kit/kit/log"
-	"github.com/go-logfmt/logfmt"
-	"github.com/grafana/loki/pkg/logproto"
-	"github.com/grafana/loki/pkg/promtail/api"
-	"github.com/grafana/loki/pkg/promtail/client"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/model"
+	client "github.com/grafana/loki-client-go/loki"
 
-	fs_model "timefidget/pkg/model"
+	fs_model "github.com/slim-bean/timefidget/pkg/model"
 )
 
 func main() {
@@ -36,20 +31,19 @@ func main() {
 		panic(err)
 	}
 	cfg := client.Config{
-		URL: flagext.URLValue{
+		URL: urlutil.URLValue{
 			URL: u,
 		},
 		BatchWait: client.BatchWait,
 		BatchSize: client.BatchSize,
-		BackoffConfig: util.BackoffConfig{
+		BackoffConfig: backoff.BackoffConfig{
 			MinBackoff: client.MinBackoff,
 			MaxBackoff: client.MaxBackoff,
 			MaxRetries: client.MaxRetries,
 		},
 		Timeout: client.Timeout,
 	}
-	logger := gklog.NewLogfmtLogger(gklog.NewSyncWriter(os.Stderr))
-	c, err := client.New(prometheus.DefaultRegisterer, cfg, logger)
+	c, err := client.New(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -72,16 +66,12 @@ func main() {
 		if *versionLabel != "" {
 			lbls["version"] = model.LabelValue(*versionLabel)
 		}
-		e := api.Entry{
-			Labels: lbls,
-			Entry: logproto.Entry{
-				Timestamp: ct,
-				Line:      line,
-			},
-		}
-		log.Println(e)
+		log.Printf("Entry: %v %s %s\n", ct, lbls, line)
 		if *write {
-			c.Chan() <- e
+			err := c.Handle(lbls, ct, line)
+			if err != nil {
+				log.Println("error sending log:", err)
+			}
 		}
 		ct = ct.Add(5 * time.Second)
 		time.Sleep(1 * time.Millisecond)

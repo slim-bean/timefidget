@@ -14,6 +14,7 @@
 package chunkenc
 
 import (
+	"fmt"
 	"math"
 	"sync"
 
@@ -131,7 +132,7 @@ func (p *pool) Get(e Encoding, b []byte) (Chunk, error) {
 		c.b.count = 0
 		return c, nil
 	}
-	return nil, errors.Errorf("invalid chunk encoding %q", e)
+	return nil, errors.Errorf("invalid encoding %q", e)
 }
 
 func (p *pool) Put(c Chunk) error {
@@ -148,7 +149,7 @@ func (p *pool) Put(c Chunk) error {
 		xc.b.count = 0
 		p.xor.Put(c)
 	default:
-		return errors.Errorf("invalid chunk encoding %q", c.Encoding())
+		return errors.Errorf("invalid encoding %q", c.Encoding())
 	}
 	return nil
 }
@@ -161,5 +162,5 @@ func FromData(e Encoding, d []byte) (Chunk, error) {
 	case EncXOR:
 		return &XORChunk{b: bstream{count: 0, stream: d}}, nil
 	}
-	return nil, errors.Errorf("invalid chunk encoding %q", e)
+	return nil, fmt.Errorf("unknown chunk encoding: %d", e)
 }
