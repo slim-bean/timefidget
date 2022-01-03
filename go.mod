@@ -2,7 +2,10 @@ module github.com/slim-bean/timefidget
 
 go 1.17
 
-require github.com/go-logfmt/logfmt v0.5.0
+require (
+	github.com/go-logfmt/logfmt v0.5.0
+	github.com/stianeikeland/go-rpio/v4 v4.6.0
+)
 
 require github.com/go-kit/kit v0.10.0 // indirect
 

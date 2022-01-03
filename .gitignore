@@ -1,5 +1,5 @@
 config_test.h
 .idea/
-cmd/fidgserver/fidgserver
 cmd/markup/markup
+cmd/notifier/notifier
 .vscode/
